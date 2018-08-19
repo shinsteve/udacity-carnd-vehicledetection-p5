@@ -47,7 +47,7 @@ def draw_filtered_bbox(image, bbox_list):
     heat = add_heat(heat, bbox_list)
 
     # Apply threshold to help remove false positives
-    heat = apply_threshold(heat, 1)
+    heat = apply_threshold(heat, 3)
 
     # Visualize the heatmap when displaying
     heatmap = np.clip(heat, 0, 255)

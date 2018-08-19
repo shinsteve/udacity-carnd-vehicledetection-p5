@@ -1,6 +1,5 @@
 import glob
 import os
-import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 import numpy as np
 import pickle
@@ -11,13 +10,16 @@ import bbox_filter
 
 # Define a single function that can extract features using hog sub-sampling and make predictions
 def find_cars(img, ystart, ystop, scale, svc, X_scaler,
-              orient, pix_per_cell, cell_per_block,
+              color_space, orient, pix_per_cell, cell_per_block,
               spatial_size, hist_bins):
 
-    img = img.astype(np.float32) / 255
+    # Uncomment the following line if you extracted training
+    # data from .png images (scaled 0 to 1 by mpimg) and the
+    # image you are searching is a .jpg (scaled 0 to 255)
+    # img = img.astype(np.float32) / 255
 
     img_tosearch = img[ystart:ystop, :, :]
-    ctrans_tosearch = convert_color(img_tosearch, conv='RGB2YCrCb')
+    ctrans_tosearch = convert_color(img_tosearch, color_space)
     if scale != 1:
         imshape = ctrans_tosearch.shape
         ctrans_tosearch = cv2.resize(ctrans_tosearch, (np.int(imshape[1] / scale),
@@ -66,7 +68,8 @@ def find_cars(img, ystart, ystop, scale, svc, X_scaler,
             hist_features = color_hist(subimg, nbins=hist_bins)
 
             # Scale features and make a prediction
-            test_features = X_scaler.transform(np.hstack((spatial_features, hist_features, hog_features)).reshape(1, -1))
+            combined_feature = np.hstack((spatial_features, hist_features, hog_features)).reshape(1, -1)
+            test_features = X_scaler.transform(combined_feature)
             #test_features = X_scaler.transform(np.hstack((shape_feat, hist_feat)).reshape(1, -1))    
             test_prediction = svc.predict(test_features)
 
@@ -83,41 +86,51 @@ def find_cars(img, ystart, ystop, scale, svc, X_scaler,
     return bboxes
 
 
-
-
 if __name__ == '__main__':
+    FILTER_WITH_HEATMAP = True
+
     # load a pe-trained svc model from a serialized (pickle) file
     dist_pickle = pickle.load(open("svc_pickle.p", "rb" ) )
 
     # get attributes of our svc object
     svc = dist_pickle["svc"]
     X_scaler = dist_pickle["scaler"]
+    color_space = dist_pickle["color_space"]
     orient = dist_pickle["orient"]
     pix_per_cell = dist_pickle["pix_per_cell"]
     cell_per_block = dist_pickle["cell_per_block"]
     spatial_size = dist_pickle["spatial_size"]
     hist_bins = dist_pickle["hist_bins"]
 
+    print(orient, pix_per_cell, cell_per_block, spatial_size, hist_bins)
+
     # Parameters for sliding window
     ystart = 400
     scale_height_list = [(1, 96), (1.25, 128), (1.5, 192), (2, 256), (2.5, 256), (3, 256), (4, 256)]
+    # scale_height_list = [(1, 256), (1.1, 256), (1.25, 256), (1.4, 256), (1.5, 256), (2, 256), (2.5, 256), (3, 256), (4, 256)]
 
     def find_car_multiscale(img, ystart, scale_height_list):
         all_bboxes = []
         for scale, height in scale_height_list:
             ystop = ystart + height
             bboxes = find_cars(img, ystart, ystop, scale,
-                               svc, X_scaler, orient,
+                               svc, X_scaler, color_space, orient,
                                pix_per_cell, cell_per_block, spatial_size, hist_bins)
             all_bboxes.extend(bboxes)
         return all_bboxes
 
     # img = mpimg.imread('test_image.jpg')
     for img_path in glob.glob('test_images/*.jpg'):
-        img = mpimg.imread(img_path)
+        img = cv2.imread(img_path)
         bboxes = find_car_multiscale(img, ystart, scale_height_list)
         out_img = np.copy(img)
-        out_img, heatmap = bbox_filter.draw_filtered_bbox(img, bboxes)
-        mpimg.imsave(os.path.join('output_images', os.path.basename(img_path)), out_img, format='jpg')
+        if FILTER_WITH_HEATMAP:
+            out_img, heatmap = bbox_filter.draw_filtered_bbox(img, bboxes)
+        else:
+            for bbox in bboxes:
+                # Draw the box on the image
+                cv2.rectangle(out_img, bbox[0], bbox[1], (255, 0, 0), 6)
+
+        cv2.imwrite(os.path.join('output_images', os.path.basename(img_path)), out_img)
     # plt.imshow(out_img)
     # plt.show()
