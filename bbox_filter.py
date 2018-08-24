@@ -40,14 +40,14 @@ def draw_labeled_bboxes(img, labels):
     return img
 
 
-def draw_filtered_bbox(image, bbox_list):
+def draw_filtered_bbox(image, bbox_list, min_thr=1):
     heat = np.zeros_like(image[:, :, 0]).astype(np.float)
 
     # Add heat to each box in box list
     heat = add_heat(heat, bbox_list)
 
     # Apply threshold to help remove false positives
-    heat = apply_threshold(heat, 3)
+    heat = apply_threshold(heat, min_thr)
 
     # Visualize the heatmap when displaying
     heatmap = np.clip(heat, 0, 255)

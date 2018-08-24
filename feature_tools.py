@@ -4,19 +4,21 @@ from skimage.feature import hog
 
 
 def convert_color(img, color_space):
-    """ Precondition: img is BGR format opened by cv2 """
+    """ Precondition: img is RGB format """
     if color_space == 'RGB':
-        return cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        return img
+    elif color_space == 'BGR':
+        return cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
     elif color_space == 'HSV':
-        return cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+        return cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
     elif color_space == 'LUV':
-        return cv2.cvtColor(img, cv2.COLOR_BGR2LUV)
+        return cv2.cvtColor(img, cv2.COLOR_RGB2LUV)
     elif color_space == 'HLS':
-        return cv2.cvtColor(img, cv2.COLOR_BGR2HLS)
+        return cv2.cvtColor(img, cv2.COLOR_RGB2HLS)
     elif color_space == 'YUV':
-        return cv2.cvtColor(img, cv2.COLOR_BGR2YUV)
+        return cv2.cvtColor(img, cv2.COLOR_RGB2YUV)
     elif color_space == 'YCrCb':
-        return cv2.cvtColor(img, cv2.COLOR_BGR2YCrCb)
+        return cv2.cvtColor(img, cv2.COLOR_RGB2YCrCb)
     else:
         print('unknown color space: ', color_space)
         return None
@@ -73,11 +75,8 @@ def single_img_features(img_path, color_space='RGB', spatial_size=(32, 32),
     # Read in each one by one
     # image = mpimg.imread(file)
     image = cv2.imread(img_path)  # Use cv2 to get [0, 255] range in any format
-    # apply color conversion if other than 'BGR'
-    if color_space != 'BGR':
-        feature_image = convert_color(image, color_space)
-    else:
-        feature_image = np.copy(image)
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    feature_image = convert_color(image, color_space)
 
     if spatial_feat is True:
         spatial_features = bin_spatial(feature_image, size=spatial_size)

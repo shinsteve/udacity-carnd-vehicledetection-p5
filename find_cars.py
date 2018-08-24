@@ -87,7 +87,6 @@ def find_cars(img, ystart, ystop, scale, svc, X_scaler,
 
 
 if __name__ == '__main__':
-    FILTER_WITH_HEATMAP = True
 
     # load a pe-trained svc model from a serialized (pickle) file
     dist_pickle = pickle.load(open("svc_pickle.p", "rb" ) )
@@ -102,12 +101,15 @@ if __name__ == '__main__':
     spatial_size = dist_pickle["spatial_size"]
     hist_bins = dist_pickle["hist_bins"]
 
-    print(orient, pix_per_cell, cell_per_block, spatial_size, hist_bins)
+    # print(color_space, orient, pix_per_cell, cell_per_block, spatial_size, hist_bins)
+    print(dist_pickle)
 
     # Parameters for sliding window
     ystart = 400
-    scale_height_list = [(1, 96), (1.25, 128), (1.5, 192), (2, 256), (2.5, 256), (3, 256), (4, 256)]
-    # scale_height_list = [(1, 256), (1.1, 256), (1.25, 256), (1.4, 256), (1.5, 256), (2, 256), (2.5, 256), (3, 256), (4, 256)]
+    scale_height_list = [
+        # (scale_ratio, height), where yend = ystart + height
+        (1.0, 96), (1.12, 112), (1.25, 128), (1.5, 192), (2.0, 256), (2.5, 256), (3.0, 256), (4.0, 256)
+    ]
 
     def find_car_multiscale(img, ystart, scale_height_list):
         all_bboxes = []
@@ -119,18 +121,47 @@ if __name__ == '__main__':
             all_bboxes.extend(bboxes)
         return all_bboxes
 
-    # img = mpimg.imread('test_image.jpg')
-    for img_path in glob.glob('test_images/*.jpg'):
-        img = cv2.imread(img_path)
-        bboxes = find_car_multiscale(img, ystart, scale_height_list)
-        out_img = np.copy(img)
-        if FILTER_WITH_HEATMAP:
-            out_img, heatmap = bbox_filter.draw_filtered_bbox(img, bboxes)
+    def filter_and_draw_bboxes(img, bboxes, n_box_min_thr, enable_filter=True):
+        if enable_filter:
+            out_img, heatmap = bbox_filter.draw_filtered_bbox(img, bboxes, n_box_min_thr)
         else:
             for bbox in bboxes:
-                # Draw the box on the image
-                cv2.rectangle(out_img, bbox[0], bbox[1], (255, 0, 0), 6)
+                cv2.rectangle(out_img, bbox[0], bbox[1], (255, 0, 0), 4)  # Draw the box
+        return
 
-        cv2.imwrite(os.path.join('output_images', os.path.basename(img_path)), out_img)
-    # plt.imshow(out_img)
-    # plt.show()
+    def process_test_images(n_box_min_thr=0):
+        for img_path in glob.glob('test_images/*.jpg'):
+            print('processing: ', img_path)
+            img = cv2.imread(img_path)
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+            bboxes = find_car_multiscale(img, ystart, scale_height_list)
+            out_img = filter_and_draw_bboxes(img, bboxes, n_box_min_thr)
+
+            out_img = cv2.cvtColor(out_img, cv2.COLOR_RGB2BGR)
+            cv2.imwrite(os.path.join('output_images', os.path.basename(img_path)), out_img)
+        return
+
+    def process_test_video(n_frame_history=1, n_box_min_thr=0):
+        import collections
+        from itertools import chain
+        bbox_history = collections.deque(maxlen=n_frame_history)  # use like ring buffer
+
+        def pipeline_func(img):
+            """ Precondition: color_space of img is RGB """
+            bboxes = find_car_multiscale(img, ystart, scale_height_list)
+            bbox_history.append(bboxes)
+            all_boxes = list(chain.from_iterable(bbox_history))  # flatten
+            out_img = filter_and_draw_bboxes(img, all_boxes, n_box_min_thr)
+            return out_img
+
+        from moviepy.editor import VideoFileClip
+        clip_name = 'project_video.mp4'
+        # clip_name = 'test_video.mp4'
+        clip1 = VideoFileClip(clip_name)  # .subclip(0.2, 0.8)
+        out_clip = clip1.fl_image(pipeline_func)
+        out_clip.write_videofile('output_videos/' + clip_name, audio=False)
+        return
+
+    # process_test_images(n_box_min_thr=0)
+    process_test_video(4, n_box_min_thr=60)
