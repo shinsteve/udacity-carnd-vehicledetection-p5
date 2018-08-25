@@ -97,7 +97,7 @@ Applying various size of window for all over the image requires huge computing c
 * Search only bottom half of the image since there should be no cars flying above a road.
 * In case of small scaled windows, search is performed only for 'far' area. This is because the longer the distance of other car, the smaller it appears on the image.
 
-The picture below illustrates the windows for scale=1.0 and scale=2.0. The overlap between next window is 25%.
+The picture below illustrates the windows for scale=1.0 and scale=2.0. The overlap between next window is 75%. In case of scale=1.0, window size is 64x64 pixel and the offest for adjacent window is 16 pix.
 
 ![alt text][image3]
 
