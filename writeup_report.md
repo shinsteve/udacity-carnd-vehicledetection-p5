@@ -1,5 +1,5 @@
 
-**Vehicle Detection Project**
+# Vehicle Detection Project
 
 The goals / steps of this project are the following:
 
@@ -90,7 +90,8 @@ The test accuracy of the model was **99.01%**.
 
 #### 1. Describe how (and identify where in your code) you implemented a sliding window search.  How did you decide what scales to search and how much to overlap windows?
 
-The code for this step is contained in the function find_car_multiscale() of [find_car.py](find_car.py).
+The code for this step is contained in the function find_car_multiscale() of [find_cars.py](find_cars.py).
+
 Applying various size of window for all over the image requires huge computing cost. So I considered the following technique to reduce the computing cost.
 
 * Search only bottom half of the image since there should be no cars flying above a road.
@@ -116,11 +117,11 @@ Here's a [link to my video result](./output_videos/project_video.mp4)
 
 #### 2. Describe how (and identify where in your code) you implemented some kind of filter for false positives and some method for combining overlapping bounding boxes.
 
-The code for this step is contained in [bbox_filter.py](bbox_filter.py) and [find_car.py](find_car.py).
+The code for this step is contained in [bbox_filter.py](bbox_filter.py) and [find_cars.py](find_cars.py).
 
 I recorded the positions of positive detections in each frame of the video. These positions are collected for several frames as "history". From the positive detections I created a heatmap and then thresholded that map to identify vehicle positions.  I then used `scipy.ndimage.measurements.label()` to identify individual blobs in the heatmap.  I then assumed each blob corresponded to a vehicle.  I constructed bounding boxes to cover the area of each blob detected.
 
-I set the number of frames for history **10**. The threshold to filter out is **40**.
+I set the number of frames for history to **10**. The minimum threshold to filter out is **40**.
 
 Here's an example result showing the heatmap from a series of frames of video, the result of `scipy.ndimage.measurements.label()` and the bounding boxes then overlaid on the last frame of video:
 
