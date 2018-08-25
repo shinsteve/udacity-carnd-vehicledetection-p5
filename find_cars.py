@@ -57,17 +57,18 @@ def main(video_clip_path):
                 cv2.rectangle(img, bbox[0], bbox[1], (255, 0, 0), 4)  # Draw the box
         return
 
-    def process_test_images(n_box_min_thr=0):
+    def process_test_images(n_box_min_thr=0, enable_filter=True):
         for img_path in glob.glob('test_images/*.jpg'):
             print('processing: ', img_path)
             img = cv2.imread(img_path)
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
             bboxes = find_car_multiscale(img, ystart, scale_height_list)
-            filter_and_draw_bboxes(img, bboxes, n_box_min_thr)
+            filter_and_draw_bboxes(img, bboxes, n_box_min_thr, enable_filter)
 
             img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
             cv2.imwrite(os.path.join('output_images', os.path.basename(img_path)), img)
+            # cv2.imwrite(os.path.join(os.path.basename(img_path)), heatmap * 2)
         return
 
     def process_test_video(n_frame_history=1, n_box_min_thr=0, enable_filter=True):
@@ -92,7 +93,8 @@ def main(video_clip_path):
 
     """ Excecution of pipeline """
     if video_clip_path is None:
-        process_test_images(n_box_min_thr=0)
+        process_test_images(n_box_min_thr=0, enable_filter=False)
+        # process_test_images(n_box_min_thr=4)
     else:
         process_test_video(10, n_box_min_thr=40)
         # process_test_video(1, n_box_min_thr=0, enable_filter=False)
@@ -170,10 +172,8 @@ def find_cars(img, ystart, ystop, scale, svc, X_scaler,
                 win_draw = np.int(window * scale)
                 box = ((xbox_left, ytop_draw + ystart),
                        (xbox_left + win_draw, ytop_draw + win_draw + ystart))
-                # cv2.rectangle(draw_img, *box, (0, 0, 255), 6)
                 bboxes.append(box)
 
-    # return draw_img
     return bboxes
 
 
