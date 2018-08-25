@@ -123,10 +123,10 @@ if __name__ == '__main__':
 
     def filter_and_draw_bboxes(img, bboxes, n_box_min_thr, enable_filter=True):
         if enable_filter:
-            out_img, heatmap = bbox_filter.draw_filtered_bbox(img, bboxes, n_box_min_thr)
+            img, heatmap = bbox_filter.draw_filtered_bbox(img, bboxes, n_box_min_thr)
         else:
             for bbox in bboxes:
-                cv2.rectangle(out_img, bbox[0], bbox[1], (255, 0, 0), 4)  # Draw the box
+                cv2.rectangle(img, bbox[0], bbox[1], (255, 0, 0), 4)  # Draw the box
         return
 
     def process_test_images(n_box_min_thr=0):
@@ -142,7 +142,7 @@ if __name__ == '__main__':
             cv2.imwrite(os.path.join('output_images', os.path.basename(img_path)), out_img)
         return
 
-    def process_test_video(n_frame_history=1, n_box_min_thr=0):
+    def process_test_video(n_frame_history=1, n_box_min_thr=0, enable_filter=False):
         import collections
         from itertools import chain
         bbox_history = collections.deque(maxlen=n_frame_history)  # use like ring buffer
@@ -152,16 +152,17 @@ if __name__ == '__main__':
             bboxes = find_car_multiscale(img, ystart, scale_height_list)
             bbox_history.append(bboxes)
             all_boxes = list(chain.from_iterable(bbox_history))  # flatten
-            out_img = filter_and_draw_bboxes(img, all_boxes, n_box_min_thr)
-            return out_img
+            filter_and_draw_bboxes(img, all_boxes, n_box_min_thr, enable_filter)
+            return img
 
         from moviepy.editor import VideoFileClip
         clip_name = 'project_video.mp4'
         # clip_name = 'test_video.mp4'
-        clip1 = VideoFileClip(clip_name)  # .subclip(0.2, 0.8)
+        clip1 = VideoFileClip(clip_name)  # .subclip(25, 25.3)
         out_clip = clip1.fl_image(pipeline_func)
         out_clip.write_videofile('output_videos/' + clip_name, audio=False)
         return
 
     # process_test_images(n_box_min_thr=0)
     process_test_video(4, n_box_min_thr=60)
+    # process_test_video(1, n_box_min_thr=0)
