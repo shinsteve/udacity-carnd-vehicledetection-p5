@@ -2,6 +2,9 @@ import numpy as np
 import cv2
 from scipy.ndimage.measurements import label
 
+""" Utility functions to filter the bounding boxes by using heatmap with threshold
+"""
+
 
 def add_heat(heatmap, bbox_list):
     # Iterate through list of bboxes

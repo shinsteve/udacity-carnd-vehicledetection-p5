@@ -3,6 +3,9 @@ import cv2
 from skimage.feature import hog
 
 
+""" Utility functions to get feature from image """
+
+
 def convert_color(img, color_space):
     """ Precondition: img is RGB format """
     if color_space == 'RGB':

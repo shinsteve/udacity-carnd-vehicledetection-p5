@@ -4,6 +4,7 @@ import cv2
 import glob
 import pickle
 import time
+import pprint
 from sklearn.svm import LinearSVC
 from sklearn.preprocessing import StandardScaler
 from skimage.feature import hog
@@ -11,19 +12,14 @@ from sklearn.model_selection import train_test_split
 from feature_tools import *
 
 
-# Read in cars and notcars
+# Read in cars and notcars from dataset
 dataset_dir = os.getenv('UDACITY_DATASET_PATH', '.') + '/vehicle_detection/'
-# cars = glob.glob(dataset_dir + 'vehicles_smallset/*/*.jpeg')
-# notcars = glob.glob(dataset_dir + 'non-vehicles_smallset/*/*.jpeg')
 cars = glob.glob(dataset_dir + 'vehicles/*/*.png')
 notcars = glob.glob(dataset_dir + 'non-vehicles/*/*.png')
+# cars = glob.glob(dataset_dir + 'vehicles_smallset/*/*.jpeg')
+# notcars = glob.glob(dataset_dir + 'non-vehicles_smallset/*/*.jpeg')
 
 print('Dataset:  cars:{}, notcars:{}'.format(len(cars), len(notcars)))
-
-# Reduce the sample size because
-# sample_size = 500
-# cars = cars[0:sample_size]
-# notcars = notcars[0:sample_size]
 
 # Hyper parameters
 PARAMS = {
@@ -32,8 +28,8 @@ PARAMS = {
     "pix_per_cell": 8,           # HOG pixels per cell
     "cell_per_block": 2,         # HOG cells per block
     "hog_channel": 'ALL',        # Can be 0, 1, 2, or "ALL"
-    "spatial_size": (16, 16),    # Spatial binning dimensions
-    "hist_bins": 16,             # Number of histogram bins
+    "spatial_size": (32, 32),    # Spatial binning dimensions
+    "hist_bins": 32,             # Number of histogram bins
     "spatial_feat": True,        # Spatial features on or off
     "hist_feat": True,           # Histogram features on or off
     "hog_feat": True,            # HOG features on or off
@@ -44,7 +40,6 @@ notcar_features = extract_features(notcars, **PARAMS)
 
 # Create an array stack of feature vectors
 X = np.vstack((car_features, notcar_features)).astype(np.float64)
-
 # Define the labels vector
 y = np.hstack((np.ones(len(car_features)), np.zeros(len(notcar_features))))
 
@@ -58,8 +53,10 @@ X_scaler = StandardScaler().fit(X_train)
 X_train = X_scaler.transform(X_train)
 X_test = X_scaler.transform(X_test)
 
-print('Parameters:', PARAMS)
+print('Parameters: ')
+pprint.pprint(PARAMS)
 print('Feature vector length:', len(X_train[0]))
+
 # Use a linear SVC
 svc = LinearSVC()
 # Check the training time for the SVC
